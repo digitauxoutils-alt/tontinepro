@@ -388,5 +388,4 @@ const CreateTontine: React.FC = () => {
   );
 };
 
-
 export default CreateTontine;
