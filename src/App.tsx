@@ -8,6 +8,14 @@ import InitiatriceDashboard from './components/Dashboard/InitiatriceDashboard';
 import ParticipantDashboard from './components/Dashboard/ParticipantDashboard';
 import CreateTontine from './components/Tontines/CreateTontine';
 import LoadingSpinner from './components/Common/LoadingSpinner';
+import JoinTontine from "./components/Tontines/JoinTontine";
+
+// ...
+<Routes>
+  {/* Autres routes */}
+  <Route path="/join" element={<JoinTontine />} />
+</Routes>
+
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
