@@ -387,5 +387,11 @@ const CreateTontine: React.FC = () => {
     </div>
   );
 };
+<p className="mt-4 text-green-600">
+  Tontine créée ✅ – Code d’invitation : <b>{tontineId}</b>
+  <br />
+  Partagez ce lien : {window.location.origin}/join?code={tontineId}
+</p>
+
 
 export default CreateTontine;
