@@ -25,7 +25,7 @@ const CreateTontine: React.FC = () => {
     description: '',
     type: 'argent' as 'argent' | 'pack' | 'epargne',
     montantCotisation: '',
-    frequence: 'mensuelle' as 'hebdomadaire' | 'mensuelle' | 'bimensuelle',
+    frequence: 'mensuelle' as 'hebdomadaire' | 'bimensuelle' | 'mensuelle',
     nombreParticipants: '',
     participantsIllimites: false,
     dateDebut: '',
@@ -71,15 +71,10 @@ const CreateTontine: React.FC = () => {
         trancheRamassageFin: formData.trancheRamassageFin ? new Date(formData.trancheRamassageFin) : undefined,
         jourDeMise: formData.jourDeMise,
         ordreRamassage: [],
-        // statut standardisé -- on utilise "active" ou "en_attente" selon ton modèle (ici on met en_attente)
-        statut: 'en_attente' as any,
+        statut: 'en_attente',
         initiatriceId: userProfile.uid,
         dateCreation: new Date(),
-        // Champs utilitaires pour faciliter le partage
-        // (si ton type Tontine ne les attend pas, TS peut réclamer; adapte si besoin)
-        // @ts-ignore
         codeInvitation,
-        // @ts-ignore
         lienInvitation
       };
 

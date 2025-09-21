@@ -45,20 +45,22 @@ export interface Tontine {
   tontineId: string;
   nom: string;
   description?: string;
-  type: "traditionnelle_argent" | "traditionnelle_pack" | "epargne";
+  type: "argent" | "pack" | "epargne";
   montantCotisation?: number;
-  frequence: "quotidien" | "hebdomadaire" | "mensuel";
+  frequence: "hebdomadaire" | "bimensuelle" | "mensuelle";
   nombreParticipants?: number;
   participantsIllimites?: boolean;
-  dateDebut: string;
-  dateFin?: string;
-  trancheRamassageDebut?: string;
-  trancheRamassageFin?: string;
+  dateDebut: Date;
+  dateFin?: Date;
+  trancheRamassageDebut?: Date;
+  trancheRamassageFin?: Date;
   jourDeMise?: string;
   ordreRamassage?: string[]; // tableau d’uid
   statut: "active" | "suspendue" | "terminee";
   initiatriceId: string;
-  dateCreation: string;
+  dateCreation: Date;
+  codeInvitation?: string;
+  lienInvitation?: string;
 }
 
 // Notification
@@ -69,4 +71,12 @@ export interface Notification {
   type: "info" | "rappel" | "alerte";
   lu: boolean;
   dateCreation: string;
+}
+
+// Extension du type Paiement pour inclure des informations supplémentaires
+export interface PaiementExtended extends Paiement {
+  tontineId: string;
+  tontineNom?: string;
+  participantNom?: string;
+  periode?: string;
 }

@@ -7,15 +7,12 @@ import AuthForm from './components/Auth/AuthForm';
 import InitiatriceDashboard from './components/Dashboard/InitiatriceDashboard';
 import ParticipantDashboard from './components/Dashboard/ParticipantDashboard';
 import CreateTontine from './components/Tontines/CreateTontine';
+import TontinesList from './components/Tontines/TontinesList';
+import TontineDetails from './components/Tontines/TontineDetails';
+import PaiementsList from './components/Paiements/PaiementsList';
+import ProfilePage from './components/Profile/ProfilePage';
 import LoadingSpinner from './components/Common/LoadingSpinner';
-import JoinTontine from "./components/Tontines/JoinTontine";
-
-// ...
-<Routes>
-  {/* Autres routes */}
-  <Route path="/join" element={<JoinTontine />} />
-</Routes>
-
+import JoinTontine from './components/Tontines/JoinTontine';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
@@ -88,12 +85,16 @@ const AppContent: React.FC = () => {
           path="/tontines" 
           element={
             <ProtectedRoute>
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Page Tontines</h2>
-                  <p className="text-gray-600">Cette page sera développée prochainement</p>
-                </div>
-              </div>
+              <TontinesList />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/tontines/:id" 
+          element={
+            <ProtectedRoute>
+              <TontineDetails />
             </ProtectedRoute>
           } 
         />
@@ -102,12 +103,7 @@ const AppContent: React.FC = () => {
           path="/paiements" 
           element={
             <ProtectedRoute>
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Page Paiements</h2>
-                  <p className="text-gray-600">Cette page sera développée prochainement</p>
-                </div>
-              </div>
+              <PaiementsList />
             </ProtectedRoute>
           } 
         />
@@ -116,14 +112,14 @@ const AppContent: React.FC = () => {
           path="/profil" 
           element={
             <ProtectedRoute>
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Page Profil</h2>
-                  <p className="text-gray-600">Cette page sera développée prochainement</p>
-                </div>
-              </div>
+              <ProfilePage />
             </ProtectedRoute>
           } 
+        />
+        
+        <Route 
+          path="/join" 
+          element={<JoinTontine />} 
         />
         
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
