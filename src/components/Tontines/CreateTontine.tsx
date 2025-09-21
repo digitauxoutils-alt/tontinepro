@@ -384,3 +384,111 @@ const CreateTontine: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/dashboard')}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              style={{ borderRadius: '10px' }}
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 bg-[#195885] text-white rounded-lg hover:bg-[#144a6b] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+              style={{ borderRadius: '10px' }}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Création...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2" size={18} />
+                  Créer la Tontine
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        {/* Modal de succès avec code et lien */}
+        {(createdCode || createdLink) && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Tontine créée avec succès !</h3>
+              
+              {createdCode && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Code d'invitation
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={createdCode}
+                      readOnly
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                      style={{ borderRadius: '10px' }}
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCode);
+                        toast.success('Code copié !');
+                      }}
+                      className="px-3 py-2 bg-[#195885] text-white rounded-lg hover:bg-[#144a6b] transition-colors"
+                      style={{ borderRadius: '10px' }}
+                    >
+                      Copier
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {createdLink && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Lien d'invitation
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={createdLink}
+                      readOnly
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                      style={{ borderRadius: '10px' }}
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdLink);
+                        toast.success('Lien copié !');
+                      }}
+                      className="px-3 py-2 bg-[#195885] text-white rounded-lg hover:bg-[#144a6b] transition-colors"
+                      style={{ borderRadius: '10px' }}
+                    >
+                      Copier
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setCreatedCode(null);
+                    setCreatedLink(null);
+                    navigate('/dashboard');
+                  }}
+                  className="px-4 py-2 bg-[#195885] text-white rounded-lg hover:bg-[#144a6b] transition-colors"
+                  style={{ borderRadius: '10px' }}
+                >
+                  Retour au Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CreateTontine;
