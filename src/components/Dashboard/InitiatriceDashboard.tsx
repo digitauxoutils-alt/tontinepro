@@ -10,7 +10,9 @@ import {
   Play,
   Pause,
   Eye,
-  Share2
+  Share2,
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
 import { 
   collection, 
@@ -31,14 +33,22 @@ const InitiatriceDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [tontines, setTontines] = useState<Tontine[]>([]);
   const [paiementsEnAttente, setPaiementsEnAttente] = useState<Paiement[]>([]);
+  const [totalParticipants, setTotalParticipants] = useState(0);
+  const [montantTotal, setMontantTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (userProfile) {
       fetchTontines();
-      fetchPaiementsEnAttente();
     }
   }, [userProfile]);
+
+  useEffect(() => {
+    if (tontines.length > 0) {
+      fetchPaiementsEnAttente();
+      calculateStats();
+    }
+  }, [tontines]);
 
   const fetchTontines = async () => {
     if (!userProfile) return;
@@ -68,6 +78,29 @@ const InitiatriceDashboard: React.FC = () => {
     }
   };
 
+  const calculateStats = async () => {
+    let totalPart = 0;
+    let totalMontant = 0;
+
+    for (const tontine of tontines) {
+      try {
+        const participantsSnapshot = await getDocs(
+          collection(db, 'tontines', tontine.tontineId, 'participants')
+        );
+        totalPart += participantsSnapshot.size;
+        
+        if (tontine.montantCotisation) {
+          totalMontant += tontine.montantCotisation * participantsSnapshot.size;
+        }
+      } catch (error) {
+        console.error('Erreur calcul stats:', error);
+      }
+    }
+
+    setTotalParticipants(totalPart);
+    setMontantTotal(totalMontant);
+  };
+
   const fetchPaiementsEnAttente = async () => {
     if (!userProfile) return;
 
@@ -86,6 +119,8 @@ const InitiatriceDashboard: React.FC = () => {
         const tontinePaiements = querySnapshot.docs.map(doc => ({
           ...doc.data(),
           paiementId: doc.id,
+          tontineId: tontine.tontineId,
+          tontineNom: tontine.nom,
           datePaiement: doc.data().datePaiement?.toDate(),
           dateValidation: doc.data().dateValidation?.toDate(),
         })) as Paiement[];
@@ -162,7 +197,7 @@ const InitiatriceDashboard: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
@@ -190,13 +225,25 @@ const InitiatriceDashboard: React.FC = () => {
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Prochains Ramassages</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {prochainRamassage ? '1' : '0'}
-                </p>
+                <p className="text-sm font-medium text-gray-600">Total Participants</p>
+                <p className="text-3xl font-bold text-green-600">{totalParticipants}</p>
               </div>
               <div className="p-3 bg-green-100 rounded-xl">
-                <DollarSign className="text-green-600" size={24} />
+                <Users className="text-green-600" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Montant Total</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {montantTotal.toLocaleString()} FCFA
+                </p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-xl">
+                <TrendingUp className="text-purple-600" size={24} />
               </div>
             </div>
           </div>
@@ -234,7 +281,7 @@ const InitiatriceDashboard: React.FC = () => {
             </button>
             
             <button
-              onClick={() => navigate('/invitations')}
+              onClick={() => navigate('/join')}
               className="flex flex-col items-center p-4 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
               style={{ borderRadius: '10px' }}
             >
@@ -288,7 +335,7 @@ const InitiatriceDashboard: React.FC = () => {
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                       <span>Type: {tontine.type}</span>
                       <span>Montant: {tontine.montantCotisation.toLocaleString()} FCFA</span>
-                      <span>Participants: {tontine.ordreRamassage.length}</span>
+                      <span>Participants: {tontine.ordreRamassage?.length || 0}</span>
                     </div>
                     
                     <div className="flex items-center space-x-2">
@@ -315,6 +362,26 @@ const InitiatriceDashboard: React.FC = () => {
                           <span>{tontine.statut === 'active' ? 'Suspendre' : 'Réactiver'}</span>
                         </button>
                       )}
+                      
+                      <button
+                        onClick={() => {
+                          const invitationText = `Rejoignez ma tontine "${tontine.nom}" sur TontinePro!\n\nCode: ${tontine.codeInvitation}\nLien: ${tontine.lienInvitation}`;
+                          if (navigator.share) {
+                            navigator.share({
+                              title: `Invitation - ${tontine.nom}`,
+                              text: invitationText,
+                            });
+                          } else {
+                            navigator.clipboard.writeText(invitationText);
+                            toast.success('Invitation copiée!');
+                          }
+                        }}
+                        className="flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                        style={{ borderRadius: '10px' }}
+                      >
+                        <Share2 size={16} />
+                        <span>Partager</span>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -346,18 +413,21 @@ const InitiatriceDashboard: React.FC = () => {
                 {paiementsEnAttente.slice(0, 5).map((paiement) => (
                   <div key={paiement.paiementId} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
                     <div>
-                      <p className="font-medium text-gray-900">Paiement en attente</p>
+                      <p className="font-medium text-gray-900">{paiement.tontineNom}</p>
                       <p className="text-sm text-gray-600">
-                        Montant: {paiement.montant.toLocaleString()} FCFA
+                        {paiement.participantNom} - {paiement.montant.toLocaleString()} FCFA
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">
                         {paiement.datePaiement.toLocaleDateString()}
                       </p>
-                      <span className="inline-block px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                        En attente
-                      </span>
+                      <button
+                        onClick={() => navigate('/paiements')}
+                        className="text-xs bg-orange-500 text-white px-2 py-1 rounded-full hover:bg-orange-600 transition-colors"
+                      >
+                        Valider
+                      </button>
                     </div>
                   </div>
                 ))}

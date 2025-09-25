@@ -8,7 +8,9 @@ import {
   CheckCircle,
   AlertCircle,
   Calendar,
-  CreditCard
+  CreditCard,
+  UserPlus,
+  Bell
 } from 'lucide-react';
 import { 
   collection, 
@@ -28,6 +30,7 @@ const ParticipantDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [tontines, setTontines] = useState<Tontine[]>([]);
   const [mesPaiements, setMesPaiements] = useState<Paiement[]>([]);
+  const [prochainsPaiements, setProchainsPaiements] = useState<Tontine[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,11 +62,13 @@ const ParticipantDashboard: React.FC = () => {
         } as Tontine;
 
         // Vérifier si l'utilisateur est participant
-        const participantDoc = await getDoc(
-          doc(db, 'tontines', tontineDoc.id, 'participants', userProfile.uid)
+        const participantsQuery = query(
+          collection(db, 'tontines', tontineDoc.id, 'participants'),
+          where('uid', '==', userProfile.uid)
         );
+        const participantsSnapshot = await getDocs(participantsQuery);
 
-        if (participantDoc.exists()) {
+        if (!participantsSnapshot.empty) {
           participantTontines.push(tontineData);
 
           // Récupérer les paiements de ce participant pour cette tontine
@@ -77,6 +82,8 @@ const ParticipantDashboard: React.FC = () => {
           const tontinePaiements = paiementsSnapshot.docs.map(doc => ({
             ...doc.data(),
             paiementId: doc.id,
+            tontineId: tontineDoc.id,
+            tontineNom: tontineData.nom,
             datePaiement: doc.data().datePaiement?.toDate(),
             dateValidation: doc.data().dateValidation?.toDate(),
           })) as Paiement[];
@@ -87,6 +94,11 @@ const ParticipantDashboard: React.FC = () => {
 
       setTontines(participantTontines);
       setMesPaiements(paiements);
+      
+      // Identifier les tontines nécessitant un paiement
+      const tontinesActives = participantTontines.filter(t => t.statut === 'active');
+      setProchainsPaiements(tontinesActives.slice(0, 3));
+      
     } catch (error) {
       console.error('Erreur lors de la récupération des tontines:', error);
       toast.error('Erreur lors du chargement des données');
@@ -135,7 +147,7 @@ const ParticipantDashboard: React.FC = () => {
 
   const tontinesActives = tontines.filter(t => t.statut === 'active');
   const paiementsEnAttente = mesPaiements.filter(p => p.statut === 'en_attente');
-  const paiementsValides = mesPaiements.filter(p => p.statut === 'valide');
+  const paiementsValides = mesPaiements.filter(p => p.statut === 'confirme');
 
   if (loading) {
     return (
@@ -200,7 +212,7 @@ const ParticipantDashboard: React.FC = () => {
         {/* Actions rapides */}
         <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions Rapides</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <button
               onClick={() => navigate('/tontines')}
               className="flex flex-col items-center p-4 bg-[#195885] text-white rounded-xl hover:bg-[#144a6b] transition-colors"
@@ -220,12 +232,21 @@ const ParticipantDashboard: React.FC = () => {
             </button>
             
             <button
-              onClick={() => navigate('/invitations')}
+              onClick={() => navigate('/join')}
               className="flex flex-col items-center p-4 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
               style={{ borderRadius: '10px' }}
             >
-              <Calendar size={24} className="mb-2" />
+              <UserPlus size={24} className="mb-2" />
               <span className="text-sm font-medium">Rejoindre</span>
+            </button>
+            
+            <button
+              onClick={() => navigate('/profil')}
+              className="flex flex-col items-center p-4 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors"
+              style={{ borderRadius: '10px' }}
+            >
+              <Bell size={24} className="mb-2" />
+              <span className="text-sm font-medium">Profil</span>
             </button>
           </div>
         </div>
@@ -250,7 +271,7 @@ const ParticipantDashboard: React.FC = () => {
                 <Users className="mx-auto text-gray-400 mb-4" size={48} />
                 <p className="text-gray-600 mb-4">Vous ne participez à aucune tontine</p>
                 <button
-                  onClick={() => navigate('/invitations')}
+                  onClick={() => navigate('/join')}
                   className="bg-[#195885] text-white px-6 py-2 rounded-lg hover:bg-[#144a6b] transition-colors"
                   style={{ borderRadius: '10px' }}
                 >
@@ -273,7 +294,7 @@ const ParticipantDashboard: React.FC = () => {
                     
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                       <span>Type: {tontine.type}</span>
-                      <span>Montant: {tontine.montantCotisation.toLocaleString()} FCFA</span>
+                      <span>Montant: {tontine.montantCotisation?.toLocaleString()} FCFA</span>
                       <span>Fréquence: {tontine.frequence}</span>
                     </div>
                     
@@ -288,7 +309,7 @@ const ParticipantDashboard: React.FC = () => {
                       
                       {tontine.statut === 'active' && (
                         <button
-                          onClick={() => navigate(`/paiements/${tontine.tontineId}`)}
+                          onClick={() => navigate('/paiements')}
                           className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                           style={{ borderRadius: '10px' }}
                         >
@@ -330,7 +351,7 @@ const ParticipantDashboard: React.FC = () => {
                   <div key={paiement.paiementId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div>
                       <p className="font-medium text-gray-900">
-                        Paiement - {paiement.periode}
+                        {paiement.tontineNom} - {paiement.periode || new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
                       </p>
                       <p className="text-sm text-gray-600">
                         Montant: {paiement.montant.toLocaleString()} FCFA
@@ -352,21 +373,35 @@ const ParticipantDashboard: React.FC = () => {
         </div>
 
         {/* Notifications/Rappels */}
-        {paiementsEnAttente.length > 0 && (
+        {(paiementsEnAttente.length > 0 || prochainsPaiements.length > 0) && (
           <div className="mt-8 bg-orange-50 border border-orange-200 rounded-2xl p-6">
             <div className="flex items-center mb-4">
               <AlertCircle className="text-orange-500 mr-2" size={20} />
-              <h3 className="text-lg font-semibold text-orange-800">Paiements en Attente de Validation</h3>
+              <h3 className="text-lg font-semibold text-orange-800">Notifications</h3>
             </div>
-            <p className="text-orange-700 mb-4">
-              Vous avez {paiementsEnAttente.length} paiement(s) en attente de validation par l'initiatrice.
-            </p>
+            
+            {paiementsEnAttente.length > 0 && (
+              <div className="mb-4">
+                <p className="text-orange-700 mb-2">
+                  ⏳ {paiementsEnAttente.length} paiement(s) en attente de validation
+                </p>
+              </div>
+            )}
+            
+            {prochainsPaiements.length > 0 && (
+              <div className="mb-4">
+                <p className="text-orange-700 mb-2">
+                  💰 {prochainsPaiements.length} tontine(s) active(s) nécessitent votre attention
+                </p>
+              </div>
+            )}
+            
             <button
               onClick={() => navigate('/paiements')}
               className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
               style={{ borderRadius: '10px' }}
             >
-              Voir les détails
+              Gérer mes paiements
             </button>
           </div>
         )}
