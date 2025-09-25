@@ -63,6 +63,8 @@ const TontineDetails: React.FC = () => {
           dateCreation: tontineDoc.data().dateCreation?.toDate(),
           dateDebut: tontineDoc.data().dateDebut?.toDate(),
           dateFin: tontineDoc.data().dateFin?.toDate(),
+          trancheRamassageDebut: tontineDoc.data().trancheRamassageDebut?.toDate(),
+          trancheRamassageFin: tontineDoc.data().trancheRamassageFin?.toDate(),
         } as Tontine;
         setTontine(tontineData);
 
@@ -83,6 +85,8 @@ const TontineDetails: React.FC = () => {
         const paiementsData = paiementsSnapshot.docs.map(doc => ({
           ...doc.data(),
           paiementId: doc.id,
+          tontineId: id,
+          tontineNom: tontineData.nom,
           datePaiement: doc.data().datePaiement?.toDate(),
           dateValidation: doc.data().dateValidation?.toDate(),
         })) as Paiement[];
@@ -322,6 +326,23 @@ const TontineDetails: React.FC = () => {
                     <p className="font-semibold">{tontine.dateDebut?.toLocaleDateString()}</p>
                   </div>
                 </div>
+                
+                {tontine.type === 'epargne' && tontine.trancheRamassageDebut && (
+                  <div className="md:col-span-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-yellow-100 rounded-lg">
+                        <Calendar className="text-yellow-600" size={20} />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Tranche de ramassage</p>
+                        <p className="font-semibold">
+                          Du {tontine.trancheRamassageDebut?.toLocaleDateString()} 
+                          {tontine.trancheRamassageFin && ` au ${tontine.trancheRamassageFin?.toLocaleDateString()}`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -365,9 +386,25 @@ const TontineDetails: React.FC = () => {
                                   <div className="w-8 h-8 bg-[#195885] text-white rounded-full flex items-center justify-center font-semibold">
                                     {index + 1}
                                   </div>
+                                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                    {participant.avatarUrl ? (
+                                      <img 
+                                        src={participant.avatarUrl} 
+                                        alt="Avatar" 
+                                        className="w-10 h-10 rounded-full object-cover"
+                                      />
+                                    ) : (
+                                      <span className="text-gray-600 font-medium">
+                                        {participant.prenom?.charAt(0)}{participant.nom?.charAt(0)}
+                                      </span>
+                                    )}
+                                  </div>
                                   <div>
                                     <p className="font-medium">{participant.prenom} {participant.nom}</p>
                                     <p className="text-sm text-gray-600">{participant.email}</p>
+                                    {participant.telephone && (
+                                      <p className="text-xs text-gray-500">{participant.telephone}</p>
+                                    )}
                                   </div>
                                 </div>
                                 
@@ -381,6 +418,11 @@ const TontineDetails: React.FC = () => {
                                      participant.statutPaiement === 'en_attente' ? 'En attente' :
                                      'Non payé'}
                                   </span>
+                                  {participant.dateDernierPaiement && (
+                                    <span className="text-xs text-gray-500">
+                                      Dernier: {new Date(participant.dateDernierPaiement).toLocaleDateString()}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -408,14 +450,32 @@ const TontineDetails: React.FC = () => {
                   {paiements.slice(0, 5).map((paiement) => (
                     <div key={paiement.paiementId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-medium text-sm">{paiement.montant.toLocaleString()} FCFA</p>
+                        <p className="font-medium text-sm">
+                          {paiement.participantNom || 'Participant'} - {paiement.montant.toLocaleString()} FCFA
+                        </p>
                         <p className="text-xs text-gray-600">{paiement.datePaiement.toLocaleDateString()}</p>
+                        {paiement.periode && (
+                          <p className="text-xs text-gray-500">{paiement.periode}</p>
+                        )}
                       </div>
                       <div className={`flex items-center space-x-1 ${getPaiementStatusColor(paiement.statut)}`}>
                         {getPaiementStatusIcon(paiement.statut)}
+                        <span className="text-xs">
+                          {paiement.statut === 'confirme' ? 'Validé' :
+                           paiement.statut === 'en_attente' ? 'En attente' :
+                           'Refusé'}
+                        </span>
                       </div>
                     </div>
                   ))}
+                  {paiements.length > 5 && (
+                    <button
+                      onClick={() => navigate('/paiements')}
+                      className="w-full text-center text-sm text-[#195885] hover:text-[#144a6b] py-2"
+                    >
+                      Voir tous les paiements ({paiements.length})
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -427,7 +487,7 @@ const TontineDetails: React.FC = () => {
               <div className="space-y-3">
                 {userProfile?.role === 'participant' && (
                   <button
-                    onClick={() => navigate(`/paiements/${tontine.tontineId}`)}
+                    onClick={() => navigate('/paiements')}
                     className="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors"
                     style={{ borderRadius: '10px' }}
                   >
@@ -453,6 +513,14 @@ const TontineDetails: React.FC = () => {
                     Partager invitation
                   </button>
                 )}
+                
+                <button
+                  onClick={() => navigate('/tontines')}
+                  className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                  style={{ borderRadius: '10px' }}
+                >
+                  Retour aux tontines
+                </button>
               </div>
             </div>
           </div>

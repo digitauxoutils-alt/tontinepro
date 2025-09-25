@@ -163,6 +163,11 @@ const PaiementsList: React.FC = () => {
     e.preventDefault();
     if (!selectedTontine || !paymentAmount || !userProfile) return;
 
+    const selectedTontineData = tontines.find(t => t.tontineId === selectedTontine);
+    if (!selectedTontineData) {
+      toast.error('Tontine non trouvée');
+      return;
+    }
     try {
       const paiementData = {
         participantId: userProfile.uid,
@@ -171,7 +176,8 @@ const PaiementsList: React.FC = () => {
         datePaiement: Timestamp.now(),
         statut: 'en_attente',
         capturePaiementUrl: paymentProof ? 'uploaded' : null, // Simulation d'upload
-        periode: new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+        periode: new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+        tontineNom: selectedTontineData.nom
       };
 
       await addDoc(collection(db, 'tontines', selectedTontine, 'paiements'), paiementData);
@@ -502,10 +508,15 @@ const PaiementsList: React.FC = () => {
                       onChange={(e) => setPaymentAmount(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#195885] focus:border-transparent"
                       style={{ borderRadius: '10px' }}
-                      placeholder="50000"
+                      placeholder={selectedTontine ? tontines.find(t => t.tontineId === selectedTontine)?.montantCotisation?.toString() : "50000"}
                       required
                     />
                   </div>
+                  {selectedTontine && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Montant suggéré: {tontines.find(t => t.tontineId === selectedTontine)?.montantCotisation?.toLocaleString()} FCFA
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -528,7 +539,19 @@ const PaiementsList: React.FC = () => {
                       <Upload className="mr-2" size={16} />
                       {paymentProof ? paymentProof.name : 'Choisir un fichier'}
                     </label>
+                    {paymentProof && (
+                      <button
+                        type="button"
+                        onClick={() => setPaymentProof(null)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Supprimer
+                      </button>
+                    )}
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formats acceptés: JPG, PNG, PDF (max 5MB)
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-end space-x-3 mt-6">
